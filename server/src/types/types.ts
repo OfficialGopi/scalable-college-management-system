@@ -1,0 +1,93 @@
+enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  OTHER = "OTHER",
+}
+
+enum UserRole {
+  ADMIN = "ADMIN",
+  TEACHER = "TEACHER",
+  STUDENT = "STUDENT",
+  ALUMNI = "ALUMNI",
+}
+
+enum BloodGroup {
+  A_POSITIVE = "A+",
+  A_NEGATIVE = "A-",
+  B_POSITIVE = "B+",
+  B_NEGATIVE = "B-",
+  AB_POSITIVE = "AB+",
+  AB_NEGATIVE = "AB-",
+  O_POSITIVE = "O+",
+  O_NEGATIVE = "O-",
+}
+
+enum Semester {
+  FIRST = "FIRST",
+  SECOND = "SECOND",
+  THIRD = "THIRD",
+  FOURTH = "FOURTH",
+  FIFTH = "FIFTH",
+  SIXTH = "SIXTH",
+  SEVENTH = "SEVENTH",
+  EIGHTH = "EIGHTH",
+}
+
+enum Day {
+  MONDAY = "MONDAY",
+  TUESDAY = "TUESDAY",
+  WEDNESDAY = "WEDNESDAY",
+  THURSDAY = "THURSDAY",
+  FRIDAY = "FRIDAY",
+  SATURDAY = "SATURDAY",
+  SUNDAY = "SUNDAY",
+}
+
+enum Department {
+  CSE = "CSE",
+  IT = "IT",
+  LT = "LT",
+}
+
+enum AdminAccess {
+  SUBJECT_ACCESS = "SUBJECT_ACCESS",
+  TEACHER_ACCESS = "TEACHER_ACCESS",
+  STUDENT_ACCESS = "STUDENT_ACCESS",
+  ROUTINE_ACCESS = "ROUTINE_ACCESS",
+  NOTICE_ACCESS = "NOTICE_ACCESS",
+  EXAM_SCHEDULE_ACCESS = "EXAM_SCHEDULE_ACCESS",
+  RESULT_ACCESS = "RESULT_ACCESS",
+  ASSIGNMENT_MONITOR_ACCESS = "ASSIGNMENT_MONITOR_ACCESS",
+  BATCH_ACCESS = "BATCH_ACCESS",
+  ATTENDENCE_MONITOR_ACCESS = "ATTENDENCE_MONITOR_ACCESS",
+  STUDENT_ACADEMIC_DETAILS_ACCESS = "STUDENT_ACADEMIC_DETAILS_ACCESS",
+}
+enum SubjectTypes {
+  THEORY = "THEORY",
+  LAB = "LAB",
+  SEMINAR = "SEMINAR",
+}
+
+enum StudentStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+}
+enum RoutineShift {
+  FIRST = "FIRST",
+  SECOND = "SECOND",
+  THIRD = "THIRD",
+  FOURTH = "FOURTH",
+}
+
+export {
+  Gender,
+  UserRole,
+  BloodGroup,
+  AdminAccess,
+  Semester,
+  Day,
+  Department,
+  SubjectTypes,
+  StudentStatus,
+  RoutineShift,
+};
