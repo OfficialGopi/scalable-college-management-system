@@ -1,0 +1,2 @@
+1.Attendence add
+2.add alumni details and alumni portal
