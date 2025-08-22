@@ -1,2 +1,5 @@
 1.Attendence add
 2.add alumni details and alumni portal
+3.Implement real time doubt solving in Assignment or anywhere
+4. Lecture add via youtube url or Upload own Lecture
+5. taking class online with videocall and tldraw
