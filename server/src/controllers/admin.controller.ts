@@ -9,6 +9,11 @@ import { IUser, UserModel } from "../models/user.model";
 import { AdminAccess, UserRole } from "../types/types";
 import { AsyncHandler } from "../utils/async-handler.util";
 import { ApiError, ApiResponse } from "../utils/response-formatter.util";
+import {
+  createStudentSchema,
+  getAllStudentsSchema,
+  updateStudentSchema,
+} from "../schemas/admin.schema";
 
 const createStudent = AsyncHandler(async (req, res) => {
   if (
