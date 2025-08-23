@@ -1,3 +1,5 @@
+import { Response } from "express";
+
 class ApiError extends Error {
   public statusCode: number;
   public success: boolean;
@@ -25,16 +27,25 @@ class ApiError extends Error {
 }
 
 class ApiResponse {
-  public statusCode: number;
-  public data: any;
-  public success: boolean;
-  public message: string;
+  private statusCode: number;
+  private data: any;
+  private success: boolean;
+  private message: string;
 
   constructor(statusCode: number, data: any, message: string = "Success") {
     this.statusCode = statusCode;
     this.data = data;
     this.message = message;
     this.success = statusCode < 400;
+  }
+
+  send(res: Response) {
+    return res.status(this.statusCode ?? 200).json({
+      statusCode: this.statusCode,
+      success: this.success,
+      message: this.message,
+      data: this.data,
+    });
   }
 }
 

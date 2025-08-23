@@ -18,6 +18,9 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 
 //ROUTES
+import { superAdminRouter } from "./routes/super-admin.route";
+
+app.use("/api/v1/super-admin", superAdminRouter);
 
 //ERROR MIDDLEWARE
 app.use(errorMiddleware);

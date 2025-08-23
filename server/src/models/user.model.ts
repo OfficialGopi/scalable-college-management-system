@@ -16,6 +16,7 @@ interface IUser extends Document {
     public_id: string;
     url: string;
   };
+  isActive: boolean;
   adminAccess: (typeof AdminAccess)[keyof typeof AdminAccess][];
   sessions: Types.ObjectId[];
   assignedSubject: Types.ObjectId;
@@ -77,6 +78,8 @@ const userSchema = new Schema<IUser>(
     phoneNumber: {
       type: String,
       required: true,
+      maxLength: 10,
+      minlength: 10,
       unique: true,
     },
     address: {
@@ -97,6 +100,10 @@ const userSchema = new Schema<IUser>(
       type: [String],
       default: [],
       enum: Object.values(AdminAccess),
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
     },
     createdBy: {
       type: Schema.Types.ObjectId,

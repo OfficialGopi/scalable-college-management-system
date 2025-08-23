@@ -14,12 +14,14 @@ function parseEnv(env: NodeJS.ProcessEnv) {
     ACCESS_TOKEN_EXPIRY: z.string(),
     REFRESH_TOKEN_EXPIRY: z.string(),
     CLIENT_URL: z.string(),
-    SUPER_ADMIN_SECRET: z.string(),
-    SUPER_ADMIN_USERNAME: z.string(),
-    SUPER_ADMIN_PASSWORD: z.string(),
     CLOUDINARY_NAME: z.string(),
     CLOUDINARY_KEY: z.string(),
     CLOUDINARY_SECRET: z.string(),
+    SUPER_ADMIN_SECRET: z.string(),
+    SUPER_ADMIN_USERNAME: z.string(),
+    SUPER_ADMIN_PASSWORD: z.string(),
+    SUPER_ADMIN_AUTH_TOKEN: z.string(),
+    SUPER_ADMIN_SESSION_SECRET: z.string(),
   });
 
   const parsedEnv = envSchema.safeParse(env);
