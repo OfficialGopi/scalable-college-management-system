@@ -1,8 +1,8 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 
 interface IMaterial extends Document {
-  batch: Schema.Types.ObjectId;
-  subject: Schema.Types.ObjectId;
+  batch: Types.ObjectId;
+  subject: Types.ObjectId;
   title: string;
   description: string;
   materialUrl: {

@@ -1,13 +1,13 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { Day, RoutineShift, Semester } from "../types/types";
 
 interface IRoutine extends Document {
-  batch: Schema.Types.ObjectId;
-  subject: Schema.Types.ObjectId;
+  batch: Types.ObjectId;
+  subject: Types.ObjectId;
   day: (typeof Day)[keyof typeof Day];
   shift: (typeof RoutineShift)[keyof typeof RoutineShift];
   semester: (typeof Semester)[keyof typeof Semester];
-  createdBy: Schema.Types.ObjectId;
+  createdBy: Types.ObjectId;
 }
 
 const routineSchema = new Schema<IRoutine>(

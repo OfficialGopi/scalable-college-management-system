@@ -1,4 +1,4 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { Department, Semester } from "../types/types";
 
 interface INotice extends Document {
@@ -9,7 +9,7 @@ interface INotice extends Document {
     public_id: string;
     url: string;
   }[];
-  createdBy: Schema.Types.ObjectId;
+  createdBy: Types.ObjectId;
   department: (typeof Department)[keyof typeof Department];
   semster: (typeof Semester)[keyof typeof Semester];
 }

@@ -1,10 +1,11 @@
+import { Types } from "mongoose";
 import { Document, model, Schema } from "mongoose";
 
 interface IResult extends Document {
-  subject: Schema.Types.ObjectId;
-  student: Schema.Types.ObjectId;
+  subject: Types.ObjectId;
+  student: Types.ObjectId;
   pointsAchived: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
-  createdBy: Schema.Types.ObjectId;
+  createdBy: Types.ObjectId;
 }
 
 const resultSchema = new Schema<IResult>(

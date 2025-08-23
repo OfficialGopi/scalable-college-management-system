@@ -1,8 +1,8 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 
 interface ISubmissionAssignment extends Document {
-  assignment: Schema.Types.ObjectId;
-  student: Schema.Types.ObjectId;
+  assignment: Types.ObjectId;
+  student: Types.ObjectId;
   file: {
     public_id: string;
     url: string;

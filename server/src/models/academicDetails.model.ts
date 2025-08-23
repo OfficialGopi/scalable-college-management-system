@@ -1,9 +1,9 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { Department, StudentStatus } from "../types/types";
 
 interface IAcademicDetails extends Document {
-  student: Schema.Types.ObjectId;
-  batch: Schema.Types.ObjectId;
+  student: Types.ObjectId;
+  batch: Types.ObjectId;
   department: (typeof Department)[keyof typeof Department];
   status: (typeof StudentStatus)[keyof typeof StudentStatus];
 }

@@ -1,5 +1,6 @@
 import { Document, model, Schema } from "mongoose";
 import { Department, Semester, SubjectTypes } from "../types/types";
+import { Types } from "mongoose";
 
 interface ISubject extends Document {
   subjectCode: string;
@@ -10,9 +11,9 @@ interface ISubject extends Document {
   credits: number;
   isDeprecated: boolean;
   assignedTeacher: Schema.Types.ObjectId;
-  routines: Schema.Types.ObjectId[];
-  batches: Schema.Types.ObjectId[];
-  results: Schema.Types.ObjectId[];
+  routines: Types.ObjectId[];
+  batches: Types.ObjectId[];
+  results: Types.ObjectId[];
 }
 
 const subjectSchema = new Schema<ISubject>(

@@ -1,15 +1,16 @@
+import { Types } from "mongoose";
 import { Document, model, Schema } from "mongoose";
 
 interface IAssignment extends Document {
-  batch: Schema.Types.ObjectId;
-  subject: Schema.Types.ObjectId;
+  batch: Types.ObjectId;
+  subject: Types.ObjectId;
   title: string;
   description: string;
   dueDate: Date;
   isClosed: boolean;
   marks: number;
-  givenBy: Schema.Types.ObjectId;
-  submissions: Schema.Types.ObjectId;
+  givenBy: Types.ObjectId;
+  submissions: Types.ObjectId[];
 }
 const assignmentSchema = new Schema<IAssignment>(
   {

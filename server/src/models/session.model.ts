@@ -1,7 +1,7 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 
 interface ISession extends Document {
-  user: Schema.Types.ObjectId;
+  user: Types.ObjectId;
   expiresAt: Date;
   refreshToken: string;
 }
@@ -13,12 +13,12 @@ const sessionSchema = new Schema<ISession>(
       required: true,
       ref: "users",
     },
-    expiresAt: {
-      type: Date,
-      required: true,
-    },
     refreshToken: {
       type: String,
+      required: true,
+    },
+    expiresAt: {
+      type: Date,
       required: true,
     },
   },

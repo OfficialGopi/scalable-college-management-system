@@ -3,6 +3,7 @@ import { AdminAccess, BloodGroup, Gender, UserRole } from "../types/types";
 
 interface IUser extends Document {
   name: string;
+  secretId: string;
   email: string;
   password: string;
   dateOfBirth: Date;
@@ -38,6 +39,11 @@ const userSchema = new Schema<IUser>(
     name: {
       type: String,
       required: true,
+    },
+    secretId: {
+      type: String,
+      required: true,
+      unique: true,
     },
     email: {
       type: String,

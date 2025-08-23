@@ -1,4 +1,4 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { Semester } from "../types/types";
 
 interface IBatch extends Document {
@@ -8,9 +8,9 @@ interface IBatch extends Document {
   currentSemester: (typeof Semester)[keyof typeof Semester];
   isResultsPublished: boolean;
   isCompleted: boolean;
-  createdBy: Schema.Types.ObjectId;
-  academicDetailsOfTheStudents: Schema.Types.ObjectId[];
-  subjects: Schema.Types.ObjectId[];
+  createdBy: Types.ObjectId;
+  academicDetailsOfTheStudents: Types.ObjectId[];
+  subjects: Types.ObjectId[];
 }
 
 const batchSchema = new Schema<IBatch>(
