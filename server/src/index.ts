@@ -4,7 +4,7 @@ import cors from "cors";
 import { corsOptions } from "./constants/cors.constant";
 import { env } from "./env";
 import { errorMiddleware } from "./middlewares/error.middleware";
-import { connectDb } from "./db/conenct.db";
+import { connectDb } from "./db/connect.db";
 
 const app = express();
 

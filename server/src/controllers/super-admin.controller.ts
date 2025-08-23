@@ -248,13 +248,13 @@ const changeAdminActivity = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Admin not found");
   }
 
-  const deletedAdmin = await UserModel.updateOne(
+  const updatedAdmin = await UserModel.updateOne(
     {
       _id: adminId,
     },
     {
       $set: {
-        isActive: true,
+        isActive: !admin.isActive,
       },
     }
   );
@@ -262,9 +262,9 @@ const changeAdminActivity = AsyncHandler(async (req, res) => {
   return new ApiResponse(
     200,
     {
-      admin: deletedAdmin,
+      admin: updatedAdmin,
     },
-    "Admin deleted successfully"
+    `Admin ${admin.isActive ? "deactivated" : "activated"} successfully`
   ).send(res);
 });
 
