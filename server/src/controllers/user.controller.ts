@@ -10,7 +10,7 @@ import { IUser, UserModel } from "../models/user.model";
 import { userLoginSchema } from "../schemas/user.schema";
 import { AsyncHandler } from "../utils/async-handler.util";
 import { ApiError, ApiResponse } from "../utils/response-formatter.util";
-import { uploadOnCloudinary } from "../lib/cloudinary.lib";
+import { uploadOnCloudinary } from "../libs/cloudinary.lib";
 
 const login = AsyncHandler(async (req, res) => {
   const { data, success } = userLoginSchema.safeParse(req.body);
