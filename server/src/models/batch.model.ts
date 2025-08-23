@@ -1,15 +1,14 @@
 import { Document, model, Schema, Types } from "mongoose";
-import { Semester } from "../types/types";
+import { Department, Semester } from "../types/types";
 
 interface IBatch extends Document {
   name: string;
-  department: string;
+  department: (typeof Department)[keyof typeof Department];
   startingYear: Date;
   currentSemester: (typeof Semester)[keyof typeof Semester];
   isResultsPublished: boolean;
   isCompleted: boolean;
   createdBy: Types.ObjectId;
-  academicDetailsOfTheStudents: Types.ObjectId[];
   subjects: Types.ObjectId[];
 }
 
@@ -21,6 +20,7 @@ const batchSchema = new Schema<IBatch>(
     },
     department: {
       type: String,
+      enum: Object.values(Department),
       required: true,
     },
     startingYear: {
@@ -51,12 +51,6 @@ const batchSchema = new Schema<IBatch>(
       type: [Schema.Types.ObjectId],
       required: true,
       ref: "subjects",
-    },
-    //RELATIONS
-    academicDetailsOfTheStudents: {
-      type: [Schema.Types.ObjectId],
-      required: true,
-      ref: "academicDetails",
     },
   },
   {

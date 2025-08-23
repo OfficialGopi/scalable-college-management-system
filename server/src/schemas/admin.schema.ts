@@ -1,5 +1,11 @@
 import z from "zod";
-import { BloodGroup, Department, Gender, StudentStatus } from "../types/types";
+import {
+  BloodGroup,
+  Department,
+  Gender,
+  Semester,
+  StudentStatus,
+} from "../types/types";
 
 const createStudentSchema = z.object({
   name: z.string(),
@@ -33,4 +39,33 @@ const getAllStudentsSchema = z.object({
   limit: z.coerce.number().default(10),
 });
 
-export { createStudentSchema, updateStudentSchema, getAllStudentsSchema };
+const createBatchSchema = z.object({
+  name: z.string(),
+  startingYear: z.coerce.date(),
+  currentSemester: z.enum(Object.values(Semester)).default(Semester.FIRST),
+});
+
+const updateBatchSchema = z.object({
+  name: z.string().optional(),
+  department: z.enum(Object.values(Department)).optional(),
+  startingYear: z.coerce.date().optional(),
+  currentSemester: z.enum(Object.values(Semester)).optional(),
+  isResultsPublished: z.boolean().optional(),
+  isCompleted: z.boolean().optional(),
+});
+
+const getAllBatchesQuerySchema = z.object({
+  includeCompletedBatches: z.coerce.boolean(),
+  department: z.enum(Object.values(Department)),
+  page: z.coerce.number(),
+  limit: z.coerce.number().default(10),
+});
+
+export {
+  createStudentSchema,
+  updateStudentSchema,
+  getAllStudentsSchema,
+  createBatchSchema,
+  updateBatchSchema,
+  getAllBatchesQuerySchema,
+};

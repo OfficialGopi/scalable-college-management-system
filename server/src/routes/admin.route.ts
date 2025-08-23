@@ -1,4 +1,10 @@
 import { Router } from "express";
+import { checkAdminAccess } from "../middlewares/auth.middleware";
+import { AdminAccess } from "../types/types";
+
+const router = Router();
+
+//STUDENT ACCESS
 import {
   changeStudentStatus,
   createStudent,
@@ -6,12 +12,7 @@ import {
   getStudentDetails,
   updateStudent,
 } from "../controllers/admin.controller";
-import { checkAdminAccess } from "../middlewares/auth.middleware";
-import { AdminAccess } from "../types/types";
 
-const router = Router();
-
-//STUDENT ACCESS
 router.get(
   "/student",
   checkAdminAccess(AdminAccess.STUDENT_ACCESS),
@@ -37,5 +38,52 @@ router.patch(
   checkAdminAccess(AdminAccess.STUDENT_ACCESS),
   changeStudentStatus
 );
+
+//BATCH ACCESS
+import {
+  createBatch,
+  updateBatch,
+  getAllBatches,
+  getBatchDetails,
+  promoteBatch,
+  publishResultAndCompleteBatch,
+} from "../controllers/admin.controller";
+
+router.get("/batch", checkAdminAccess(AdminAccess.BATCH_ACCESS), getAllBatches);
+router.get(
+  "/batch/:batchId",
+  checkAdminAccess(AdminAccess.BATCH_ACCESS),
+  getBatchDetails
+);
+router.post("/batch", checkAdminAccess(AdminAccess.BATCH_ACCESS), createBatch);
+router.put(
+  "/batch/:batchId",
+  checkAdminAccess(AdminAccess.BATCH_ACCESS),
+  updateBatch
+);
+router.put(
+  "/batch/promote/:batchId",
+  checkAdminAccess(AdminAccess.BATCH_ACCESS),
+  promoteBatch
+);
+router.put(
+  "/batch/complete/:batchId",
+  checkAdminAccess(AdminAccess.BATCH_ACCESS),
+  publishResultAndCompleteBatch
+);
+
+//TEACHER ACCESS
+
+//SUBJECT ACCESS
+
+//ASSIGNMENT ACCESS
+
+//MATERIAL ACCESS
+
+//ROUTINE ACCESS
+
+//RESULT ACCESS
+
+//NOTICE ACCESS
 
 export { router as adminRouter };
