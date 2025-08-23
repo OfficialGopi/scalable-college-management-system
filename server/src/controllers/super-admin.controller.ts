@@ -1,6 +1,6 @@
 import { env } from "../env";
-import { hashPassword } from "../helper/bcrypt.helper";
-import { signToken } from "../helper/jwt.helper";
+import { hashPassword } from "../helpers/bcrypt.helper";
+import { signToken } from "../helpers/jwt.helper";
 import { UserModel } from "../models/user.model";
 import {
   adminIdSchema,

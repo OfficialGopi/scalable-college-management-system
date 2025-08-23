@@ -1,10 +1,10 @@
 import { cookieFieldNames, cookieOptions } from "../constants/cookie.constant";
 import { env } from "../env";
-import { comparePassword } from "../helper/bcrypt.helper";
+import { comparePassword } from "../helpers/bcrypt.helper";
 import {
   deleteExpiredSessions,
   generateTokenAndSaveToDatabase,
-} from "../helper/model.helper";
+} from "../helpers/model.helper";
 import { SessionModel } from "../models/session.model";
 import { IUser, UserModel } from "../models/user.model";
 import { userLoginSchema } from "../schemas/user.schema";

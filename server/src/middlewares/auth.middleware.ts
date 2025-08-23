@@ -1,6 +1,6 @@
 import { cookieFieldNames } from "../constants/cookie.constant";
 import { env } from "../env";
-import { extractDataFromToken } from "../helper/jwt.helper";
+import { extractDataFromToken } from "../helpers/jwt.helper";
 import { UserModel } from "../models/user.model";
 import { superAdminAuthenticationHeaderSchema } from "../schemas/super-admin.schema";
 import { AdminAccess, UserRole } from "../types/types";

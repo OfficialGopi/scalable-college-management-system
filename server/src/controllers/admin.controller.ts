@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { hashPassword } from "../helper/bcrypt.helper";
+import { hashPassword } from "../helpers/bcrypt.helper";
 import {
   AcademicDetailsModel,
   IAcademicDetails,
