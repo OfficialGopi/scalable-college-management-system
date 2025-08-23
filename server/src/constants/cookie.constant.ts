@@ -6,4 +6,9 @@ const cookieOptions: CookieOptions = {
   sameSite: "none",
 };
 
-export { cookieOptions };
+const cookieFieldNames = {
+  accessToken: "access-token",
+  refreshToken: "refresh-token",
+};
+
+export { cookieOptions, cookieFieldNames };

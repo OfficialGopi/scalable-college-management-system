@@ -18,6 +18,12 @@ const hashPassword = async (password: string) => {
 const comparePassword = async (password: string, hashedPassword: string) => {
   try {
     const result = await bcrypt.compare(password, hashedPassword);
+    if (!result) {
+      return {
+        success: false,
+        message: "Password does not match",
+      };
+    }
     return {
       success: true,
       data: result,

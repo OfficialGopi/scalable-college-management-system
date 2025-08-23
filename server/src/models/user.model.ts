@@ -26,7 +26,7 @@ interface IUser extends Document {
   emailVerificationToken: string;
   emailVerificationExpiry: Date;
   createdBy: Types.ObjectId;
-  studentsAcademicDetails: Types.ObjectId[];
+  studentAcademicDetails: Types.ObjectId;
   routinesCreated: Types.ObjectId[];
   batchesCreated: Types.ObjectId[];
   results: Types.ObjectId[];
@@ -131,9 +131,8 @@ const userSchema = new Schema<IUser>(
       default: [],
       ref: "subjects",
     },
-    studentsAcademicDetails: {
-      type: [Schema.Types.ObjectId],
-      default: [],
+    studentAcademicDetails: {
+      type: Schema.Types.ObjectId,
       ref: "academicDetails",
     },
     batchesCreated: {

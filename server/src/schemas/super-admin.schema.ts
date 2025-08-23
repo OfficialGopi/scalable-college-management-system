@@ -13,6 +13,7 @@ const superAdminAuthenticationHeaderSchema = z.object({
 
 const createAdminSchema = z.object({
   name: z.string(),
+  secretId: z.string(),
   dateOfBirth: z.coerce.date(),
   gender: z.enum(Object.values(Gender)),
   phoneNumber: z.string().length(10),
@@ -23,6 +24,7 @@ const createAdminSchema = z.object({
 
 const updateAdminSchema = z.object({
   name: z.string().optional(),
+  secretId: z.string().optional(),
   dateOfBirth: z.coerce.date().optional(),
   gender: z.enum(Object.values(Gender)).optional(),
   phoneNumber: z.string().length(10).optional(),

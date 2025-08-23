@@ -154,6 +154,7 @@ const createAdmin = AsyncHandler(async (req, res) => {
 
   const newAdmin = await UserModel.create({
     name: data.name,
+    secretId: data.secretId,
     dateOfBirth: new Date(data.dateOfBirth).toISOString(),
     gender: data.gender,
     role: UserRole.ADMIN,
@@ -206,6 +207,7 @@ const updateAdmin = AsyncHandler(async (req, res) => {
     {
       $set: {
         name: data.name,
+        secretId: data.secretId,
         dateOfBirth: new Date(data.dateOfBirth!).toISOString(),
         gender: data.gender,
         phoneNumber: data.phoneNumber,
@@ -266,6 +268,54 @@ const changeAdminActivity = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+const adminResetPassword = AsyncHandler(async (req, res) => {
+  if (!req.superAdmin) {
+    throw new ApiError(400, "You are not authorized to access this");
+  }
+
+  const params = adminIdSchema.safeParse(req.params);
+
+  if (!params.success || !params.data) {
+    throw new ApiError(400, "Invalid Admin Id");
+  }
+
+  const adminId = params.data.adminId;
+
+  const admin = await UserModel.findById(adminId);
+
+  if (!admin) {
+    throw new ApiError(400, "Admin not found");
+  }
+
+  const hashedPassword = await hashPassword(
+    `${
+      new Date(admin.dateOfBirth).getDate() +
+      new Date(admin.dateOfBirth).getMonth() +
+      new Date(admin.dateOfBirth).getFullYear()
+    }`
+  );
+
+  if (!hashedPassword.success || !hashedPassword.data) {
+    throw new ApiError(400, hashedPassword.message);
+  }
+
+  await UserModel.updateOne(
+    {
+      _id: adminId,
+    },
+    {
+      $set: {
+        password: hashedPassword.data,
+        isFirstLogin: true,
+      },
+    }
+  );
+  const updatedAdmin = await UserModel.findById(adminId);
+  return new ApiResponse(200, {
+    admin: updatedAdmin,
+  }).send(res);
+});
+
 export {
   superAdminLogin,
   createAdmin,
@@ -273,4 +323,5 @@ export {
   changeAdminActivity,
   getAllAdmins,
   getAdminDetails,
+  adminResetPassword,
 };

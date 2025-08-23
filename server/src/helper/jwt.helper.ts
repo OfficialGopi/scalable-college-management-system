@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 
-const signToken = (data: any, token: string, expiry?: string) => {
+const signToken = (data: any, token: string, expiry?: number) => {
   return jwt.sign(data, token, {
-    expiresIn: expiry,
+    expiresIn: expiry ? expiry * 60 * 60 * 24 : undefined,
   } as jwt.SignOptions);
 };
 
