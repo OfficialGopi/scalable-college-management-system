@@ -12,6 +12,11 @@ interface IRoutine extends Document {
 
 const routineSchema = new Schema<IRoutine>(
   {
+    batch: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "batches",
+    },
     subject: {
       type: Schema.Types.ObjectId,
       required: true,

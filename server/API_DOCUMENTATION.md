@@ -5,14 +5,15 @@
 1. [Authentication](#authentication)
 2. [Super Admin Routes](#super-admin-routes)
 3. [Admin Routes](#admin-routes)
-4. [User Routes](#user-routes)
-5. [Data Types and Enums](#data-types-and-enums)
-6. [Error Responses](#error-responses)
-7. [File Upload](#file-upload)
-8. [Rate Limiting](#rate-limiting)
-9. [Authentication Flow](#authentication-flow)
-10. [Development Setup](#development-setup)
-11. [Testing](#testing)
+4. [Student Routes](#student-routes)
+5. [User Routes](#user-routes)
+6. [Data Types and Enums](#data-types-and-enums)
+7. [Error Responses](#error-responses)
+8. [File Upload](#file-upload)
+9. [Rate Limiting](#rate-limiting)
+10. [Authentication Flow](#authentication-flow)
+11. [Development Setup](#development-setup)
+12. [Testing](#testing)
 
 ## Base URL
 
@@ -1802,11 +1803,574 @@ Authorization: Bearer <admin_token>
 
 ---
 
+## Student Routes
+
+All student routes require student authentication and are accessible to students and admins.
+
+### 1. Get Student Academic Details
+
+**GET** `/student/academic-details`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Academic details fetched successfully",
+  "data": {
+    "student": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d4",
+      "student": "64f8a1b2c3d4e5f6a7b8c9d5",
+      "batch": "64f8a1b2c3d4e5f6a7b8c9d2",
+      "department": "CSE",
+      "status": "ACTIVE"
+    }
+  }
+}
+```
+
+### 2. Get Student Batch Details
+
+**GET** `/student/batch-details`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Batch details fetched successfully",
+  "data": {
+    "batch": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d2",
+      "name": "CSE 2023",
+      "startingYear": "2023-06-01T00:00:00.000Z",
+      "currentSemester": "FIRST",
+      "department": "CSE"
+    }
+  }
+}
+```
+
+### 3. Get Materials
+
+**GET** `/student/materials`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Query Parameters:**
+
+- `batch` (string, required): Batch ID
+- `subject` (string, required): Subject ID
+- `page` (number, optional): Page number (default: 1)
+- `limit` (number, optional): Items per page (default: 10)
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Materials fetched successfully",
+  "data": {
+    "materials": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9dd",
+        "title": "Lecture Notes - Week 1",
+        "description": "Introduction to programming concepts",
+        "materialUrl": {
+          "public_id": "materials/lecture_notes_1",
+          "url": "https://res.cloudinary.com/example/lecture_notes_1.pdf"
+        }
+      }
+    ]
+  }
+}
+```
+
+### 4. Get Student Routine
+
+**GET** `/student/routine`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Routine fetched successfully",
+  "data": {
+    "routine": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9de",
+        "day": "MONDAY",
+        "shift": "FIRST",
+        "semester": "FIRST",
+        "subject": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+          "subjectName": "Introduction to Computer Science",
+          "subjectCode": "CS101"
+        },
+        "createdBy": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+          "name": "Dr. Sarah Brown",
+          "secretId": "TCH001"
+        }
+      }
+    ]
+  }
+}
+```
+
+### 5. Get Student Subjects
+
+**GET** `/student/subjects`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Subjects fetched successfully",
+  "data": {
+    "subjects": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+        "subjectCode": "CS101",
+        "subjectName": "Introduction to Computer Science",
+        "department": "CSE",
+        "semester": "FIRST",
+        "subjectType": "THEORY",
+        "credits": 3,
+        "assignedTeacher": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+          "name": "Dr. Sarah Brown",
+          "secretId": "TCH001"
+        }
+      }
+    ]
+  }
+}
+```
+
+### 6. Get Student Assignments
+
+**GET** `/student/assignments`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Assignments fetched successfully",
+  "data": {
+    "assignments": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9db",
+        "title": "Programming Assignment 1",
+        "description": "Write a program to implement basic algorithms",
+        "dueDate": "2023-09-15T23:59:59.000Z",
+        "marks": 20,
+        "isClosed": false,
+        "subject": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+          "subjectName": "Introduction to Computer Science",
+          "subjectCode": "CS101"
+        },
+        "givenBy": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+          "name": "Dr. Sarah Brown",
+          "secretId": "TCH001"
+        }
+      }
+    ]
+  }
+}
+```
+
+### 7. Submit Assignment
+
+**POST** `/student/assignments/submit`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Request Body:**
+
+```json
+{
+  "assignmentId": "64f8a1b2c3d4e5f6a7b8c9db",
+  "file": {
+    "public_id": "assignments/submission_1",
+    "url": "https://res.cloudinary.com/example/submission_1.pdf"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "message": "Assignment submitted successfully",
+  "data": {
+    "submission": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9e1",
+      "assignment": "64f8a1b2c3d4e5f6a7b8c9db",
+      "student": "64f8a1b2c3d4e5f6a7b8c9d5",
+      "file": {
+        "public_id": "assignments/submission_1",
+        "url": "https://res.cloudinary.com/example/submission_1.pdf"
+      },
+      "read": false,
+      "marksObtained": 0
+    }
+  }
+}
+```
+
+### 8. Get Assignment Submission
+
+**GET** `/student/assignments/:assignmentId/submission`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Path Parameters:**
+
+- `assignmentId` (string, required): Assignment's MongoDB ObjectId
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Submission fetched successfully",
+  "data": {
+    "submission": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9e1",
+      "assignment": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9db",
+        "title": "Programming Assignment 1",
+        "description": "Write a program to implement basic algorithms",
+        "dueDate": "2023-09-15T23:59:59.000Z",
+        "marks": 20
+      },
+      "file": {
+        "public_id": "assignments/submission_1",
+        "url": "https://res.cloudinary.com/example/submission_1.pdf"
+      },
+      "read": false,
+      "marksObtained": 0
+    }
+  }
+}
+```
+
+### 9. Get Student Results
+
+**GET** `/student/results`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Results fetched successfully",
+  "data": {
+    "results": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9df",
+        "pointsAchived": 8,
+        "subject": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+          "subjectName": "Introduction to Computer Science",
+          "subjectCode": "CS101",
+          "credits": 3
+        },
+        "createdBy": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+          "name": "Dr. Sarah Brown",
+          "secretId": "TCH001"
+        }
+      }
+    ]
+  }
+}
+```
+
+### 10. Get Subject Result
+
+**GET** `/student/results/subject/:subjectId`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Path Parameters:**
+
+- `subjectId` (string, required): Subject's MongoDB ObjectId
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Subject result fetched successfully",
+  "data": {
+    "result": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9df",
+      "pointsAchived": 8,
+      "subject": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d9",
+        "subjectName": "Introduction to Computer Science",
+        "subjectCode": "CS101",
+        "credits": 3
+      },
+      "createdBy": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+        "name": "Dr. Sarah Brown",
+        "secretId": "TCH001"
+      }
+    }
+  }
+}
+```
+
+### 11. Get Student Notices
+
+**GET** `/student/notices`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Notices fetched successfully",
+  "data": {
+    "notices": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9e0",
+        "title": "Exam Schedule Announcement",
+        "description": "Mid-semester exams will be held from next week",
+        "date": "2023-09-10T00:00:00.000Z",
+        "department": "CSE",
+        "semester": "FIRST",
+        "attachments": [
+          {
+            "public_id": "notices/exam_schedule",
+            "url": "https://res.cloudinary.com/example/exam_schedule.pdf"
+          }
+        ],
+        "createdBy": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+          "name": "Dr. Sarah Brown",
+          "secretId": "TCH001"
+        }
+      }
+    ]
+  }
+}
+```
+
+### 12. Get Notice Details
+
+**GET** `/student/notices/:noticeId`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Path Parameters:**
+
+- `noticeId` (string, required): Notice's MongoDB ObjectId
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Notice details fetched successfully",
+  "data": {
+    "notice": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9e0",
+      "title": "Exam Schedule Announcement",
+      "description": "Mid-semester exams will be held from next week",
+      "date": "2023-09-10T00:00:00.000Z",
+      "department": "CSE",
+      "semester": "FIRST",
+      "attachments": [
+        {
+          "public_id": "notices/exam_schedule",
+          "url": "https://res.cloudinary.com/example/exam_schedule.pdf"
+        }
+      ],
+      "createdBy": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d7",
+        "name": "Dr. Sarah Brown",
+        "secretId": "TCH001"
+      }
+    }
+  }
+}
+```
+
+### 13. Get Student Profile
+
+**GET** `/student/profile`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Student profile fetched successfully",
+  "data": {
+    "student": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d4",
+      "student": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d5",
+        "name": "Bob Wilson",
+        "secretId": "STU002",
+        "email": "bob.wilson@college.edu",
+        "phoneNumber": "9876543211",
+        "address": "456 Student Street, City",
+        "bloodGroup": "B+",
+        "gender": "MALE",
+        "dateOfBirth": "2005-03-20T00:00:00.000Z",
+        "profileImage": {
+          "public_id": "users/profile_image_2",
+          "url": "https://res.cloudinary.com/example/profile_image_2.jpg"
+        }
+      },
+      "batch": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d2",
+        "name": "CSE 2023",
+        "startingYear": "2023-06-01T00:00:00.000Z",
+        "currentSemester": "FIRST"
+      },
+      "department": "CSE",
+      "status": "ACTIVE"
+    }
+  }
+}
+```
+
+### 14. Update Student Profile
+
+**PUT** `/student/profile`
+
+**Headers:**
+
+```
+Authorization: Bearer <student_token>
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "Bob Wilson Updated",
+  "phoneNumber": "9876543212",
+  "address": "789 New Address, City"
+}
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "user": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d5",
+      "name": "Bob Wilson Updated",
+      "phoneNumber": "9876543212",
+      "address": "789 New Address, City"
+    }
+  }
+}
+```
+
+---
+
 ## User Routes
 
 All user routes require user authentication.
-
-### 1. User Login
 
 **POST** `/user/login`
 
@@ -2133,6 +2697,43 @@ For file uploads (materials, notices), use Cloudinary integration:
    pnpm run build
    pnpm start
    ```
+
+---
+
+## Summary
+
+The College Management System provides a comprehensive API for managing academic operations:
+
+### **Super Admin Features:**
+
+- Manage system administrators
+- Full system access control
+
+### **Admin Features:**
+
+- Student and teacher management
+- Subject and batch administration
+- Assignment and material management
+- Routine and result management
+- Notice creation and management
+
+### **Student Features:**
+
+- View academic details and batch information
+- Access study materials and class routines
+- View assigned subjects and teachers
+- Submit assignments and track submissions
+- View academic results and performance
+- Receive department-specific notices
+- Manage personal profile information
+
+### **System Features:**
+
+- Role-based authentication and authorization
+- File upload support via Cloudinary
+- Comprehensive data validation
+- Error handling and response formatting
+- Scalable MongoDB architecture
 
 ---
 
