@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkAdminAccess } from "../middlewares/auth.middleware";
+import { checkAdminAccess, checkUser } from "../middlewares/auth.middleware";
 import { AdminAccess } from "../types/types";
 
 const router = Router();
@@ -12,6 +12,8 @@ import {
   getStudentDetails,
   updateStudent,
 } from "../controllers/admin.controller";
+
+router.use(checkUser); //AUTHENTICATION MIDDLEWARE
 
 router.get(
   "/student",
