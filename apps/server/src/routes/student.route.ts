@@ -1,0 +1,38 @@
+import { Router } from "express";
+import { checkRole, checkUser } from "../middlewares/auth.middleware";
+
+const router = Router();
+
+router.use(checkUser); //AUTHENTICATION MIDDLEWARE
+
+router.use(checkRole([UserRole.STUDENT, UserRole.ADMIN])); //AUTHORIZATION MIDDLEWARE
+
+//STUDENT DETAILS
+import { UserRole } from "../types/types";
+import { getStudentAcademicDetails } from "../controllers/student.controller";
+
+router.get("/academic-details", getStudentAcademicDetails);
+
+//BATCH DETAILS
+import { getStudentBatchDetails } from "../controllers/student.controller";
+
+router.get("/batch-details", getStudentBatchDetails);
+
+//MATERIAL DETAILS
+import { getMaterials } from "../controllers/student.controller";
+
+router.get("/materials", getMaterials);
+
+//ROUTINE DETAILS
+
+//SUBJECT DETAILS
+
+//ASSIGNMENT DETAILS
+
+//RESULT DETAILS
+
+//SUBJECT DETAILS
+
+//NOTICE DETAILS
+
+export { router as studentRouter };
