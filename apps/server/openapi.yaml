@@ -1,0 +1,1199 @@
+openapi: 3.1.0
+info:
+  title: College Management System API
+  version: 1.0.0
+  description: |
+    Express + Mongoose backend for college management. Uses cookie-based auth for users and fine-grained admin access.
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+tags:
+  - name: User
+  - name: Super Admin
+  - name: Admin
+  - name: Student
+  - name: Others
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access-token
+      description: Access token set by /user/login
+    bearerSuperAdmin:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token returned by /super-admin/login
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        statusCode:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 10
+    LoginRequest:
+      type: object
+      required: [secretId, password]
+      properties:
+        secretId:
+          type: string
+        password:
+          type: string
+          format: password
+    CreateStudent:
+      type: object
+      required:
+        [
+          name,
+          secretId,
+          dateOfBirth,
+          gender,
+          phoneNumber,
+          address,
+          bloodGroup,
+          batch,
+          department,
+        ]
+      properties:
+        name: { type: string }
+        secretId: { type: string }
+        dateOfBirth: { type: string, format: date }
+        gender: { type: string, enum: [MALE, FEMALE, OTHER] }
+        phoneNumber: { type: string }
+        address: { type: string }
+        bloodGroup:
+          {
+            type: string,
+            enum:
+              [
+                A_POSITIVE,
+                A_NEGATIVE,
+                B_POSITIVE,
+                B_NEGATIVE,
+                AB_POSITIVE,
+                AB_NEGATIVE,
+                O_POSITIVE,
+                O_NEGATIVE,
+              ],
+          }
+        batch: { type: string }
+        department: { type: string }
+    UpdateStudent:
+      type: object
+      properties:
+        name: { type: string }
+        secretId: { type: string }
+        dateOfBirth: { type: string, format: date }
+        gender: { type: string, enum: [MALE, FEMALE, OTHER] }
+        phoneNumber: { type: string }
+        address: { type: string }
+        bloodGroup: { type: string }
+        batch: { type: string }
+        department: { type: string }
+        isActive: { type: boolean }
+    CreateTeacher:
+      type: object
+      required:
+        [
+          name,
+          secretId,
+          dateOfBirth,
+          gender,
+          phoneNumber,
+          address,
+          bloodGroup,
+          email,
+        ]
+      properties:
+        name: { type: string }
+        secretId: { type: string }
+        dateOfBirth: { type: string, format: date }
+        gender: { type: string }
+        phoneNumber: { type: string }
+        address: { type: string }
+        bloodGroup: { type: string }
+        email: { type: string, format: email }
+    UpdateTeacher:
+      type: object
+      properties:
+        name: { type: string }
+        secretId: { type: string }
+        dateOfBirth: { type: string, format: date }
+        gender: { type: string }
+        phoneNumber: { type: string }
+        address: { type: string }
+        bloodGroup: { type: string }
+        email: { type: string, format: email }
+    CreateSubject:
+      type: object
+      required:
+        [subjectCode, subjectName, department, semester, subjectType, credits]
+      properties:
+        subjectCode: { type: string }
+        subjectName: { type: string }
+        department: { type: string }
+        semester: { type: string }
+        subjectType: { type: string, enum: [THEORY, LAB, SEMINAR] }
+        credits: { type: integer, minimum: 0, maximum: 5 }
+        assignedTeacher: { type: string, nullable: true }
+    UpdateSubject:
+      type: object
+      properties:
+        subjectCode: { type: string }
+        subjectName: { type: string }
+        department: { type: string }
+        semester: { type: string }
+        subjectType: { type: string }
+        credits: { type: integer }
+        assignedTeacher: { type: string }
+        isDeprecated: { type: boolean }
+    CreateBatch:
+      type: object
+      required: [name, startingYear]
+      properties:
+        name: { type: string }
+        startingYear: { type: string, format: date }
+        currentSemester: { type: string }
+    UpdateBatch:
+      type: object
+      properties:
+        name: { type: string }
+        department: { type: string }
+        startingYear: { type: string, format: date }
+        currentSemester: { type: string }
+        isResultsPublished: { type: boolean }
+        isCompleted: { type: boolean }
+    CreateAssignment:
+      type: object
+      required: [batch, subject, title, description, dueDate, marks]
+      properties:
+        batch: { type: string }
+        subject: { type: string }
+        title: { type: string }
+        description: { type: string }
+        dueDate: { type: string, format: date }
+        marks: { type: integer, minimum: 1 }
+    UpdateAssignment:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        dueDate: { type: string, format: date }
+        marks: { type: integer }
+        isClosed: { type: boolean }
+    CreateMaterial:
+      type: object
+      required: [batch, subject, title, description, materialUrl]
+      properties:
+        batch: { type: string }
+        subject: { type: string }
+        title: { type: string }
+        description: { type: string }
+        materialUrl:
+          type: object
+          required: [public_id, url]
+          properties:
+            public_id: { type: string }
+            url: { type: string }
+    UpdateMaterial:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        materialUrl:
+          type: object
+          properties:
+            public_id: { type: string }
+            url: { type: string }
+    CreateRoutine:
+      type: object
+      required: [batch, subject, day, shift, semester]
+      properties:
+        batch: { type: string }
+        subject: { type: string }
+        day: { type: string }
+        shift: { type: string }
+        semester: { type: string }
+    UpdateRoutine:
+      type: object
+      properties:
+        subject: { type: string }
+        day: { type: string }
+        shift: { type: string }
+        semester: { type: string }
+    CreateResult:
+      type: object
+      required: [subject, student, pointsAchived]
+      properties:
+        subject: { type: string }
+        student: { type: string }
+        pointsAchived: { type: integer, minimum: 0, maximum: 10 }
+    UpdateResult:
+      type: object
+      properties:
+        pointsAchived: { type: integer, minimum: 0, maximum: 10 }
+    CreateNotice:
+      type: object
+      required: [title, description, date]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        date: { type: string, format: date }
+        department: { type: string, nullable: true }
+        semester: { type: string, nullable: true }
+        attachments:
+          type: array
+          items:
+            type: object
+            required: [public_id, url]
+            properties:
+              public_id: { type: string }
+              url: { type: string }
+    UpdateNotice:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        date: { type: string, format: date }
+        department: { type: string }
+        semester: { type: string }
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              public_id: { type: string }
+              url: { type: string }
+    SubmitAssignmentForm:
+      type: object
+      properties:
+        assignment: { type: string }
+      required: [assignment]
+    GradeSubmission:
+      type: object
+      properties:
+        marksObtained: { type: number, minimum: 0 }
+        read: { type: boolean }
+      required: [marksObtained]
+
+paths:
+  /user/login:
+    post:
+      tags: [User]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  /user/logout:
+    post:
+      tags: [User]
+      security: [{ cookieAuth: [] }]
+      summary: Logout user
+      responses:
+        "200": { description: OK }
+
+  /user/me:
+    get:
+      tags: [User]
+      security: [{ cookieAuth: [] }]
+      summary: Get current user
+      responses:
+        "200": { description: OK }
+
+  /user/update-profile-image:
+    put:
+      tags: [User]
+      security: [{ cookieAuth: [] }]
+      summary: Update profile image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profileImage:
+                  type: string
+                  format: binary
+      responses:
+        "200": { description: Updated }
+
+  /super-admin/login:
+    post:
+      tags: [Super Admin]
+      summary: Super admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, secretKey]
+              properties:
+                username: { type: string }
+                password: { type: string }
+                secretKey: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /super-admin/admin:
+    get:
+      tags: [Super Admin]
+      security: [{ bearerSuperAdmin: [] }]
+      summary: List admins
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+        - in: query
+          name: onlyActive
+          schema: { type: boolean }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Super Admin]
+      security: [{ bearerSuperAdmin: [] }]
+      summary: Create admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                secretId: { type: string }
+                dateOfBirth: { type: string, format: date }
+                gender: { type: string }
+                phoneNumber: { type: string }
+                address: { type: string }
+                bloodGroup: { type: string }
+                adminAccess:
+                  type: array
+                  items: { type: string }
+      responses:
+        "201": { description: Created }
+
+  /super-admin/admin/{adminId}:
+    get:
+      tags: [Super Admin]
+      security: [{ bearerSuperAdmin: [] }]
+      summary: Admin details
+      parameters:
+        - in: path
+          name: adminId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Super Admin]
+      security: [{ bearerSuperAdmin: [] }]
+      summary: Update admin
+      parameters:
+        - in: path
+          name: adminId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": { description: OK }
+    patch:
+      tags: [Super Admin]
+      security: [{ bearerSuperAdmin: [] }]
+      summary: Toggle admin activity
+      parameters:
+        - in: path
+          name: adminId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /super-admin/admin/{adminId}/reset-password:
+    patch:
+      tags: [Super Admin]
+      security: [{ bearerSuperAdmin: [] }]
+      summary: Reset admin password
+      parameters:
+        - in: path
+          name: adminId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /admin-access/student:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List students
+      parameters:
+        - in: query
+          name: department
+          schema: { type: string }
+        - in: query
+          name: batch
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudent"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/student/{studentId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Student details
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update student
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStudent"
+      responses:
+        "200": { description: OK }
+    patch:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Toggle student activity
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /admin-access/batch:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List batches
+      parameters:
+        - in: query
+          name: includeCompletedBatches
+          schema: { type: boolean }
+        - in: query
+          name: department
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBatch"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/batch/{batchId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Batch details
+      parameters:
+        - in: path
+          name: batchId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update batch
+      parameters:
+        - in: path
+          name: batchId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBatch"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/batch/promote/{batchId}:
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Promote batch to next semester
+      parameters:
+        - in: path
+          name: batchId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /admin-access/batch/complete/{batchId}:
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Publish results and complete batch
+      parameters:
+        - in: path
+          name: batchId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /admin-access/teacher:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List teachers
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+        - in: query
+          name: onlyActive
+          schema: { type: boolean }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create teacher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeacher"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/teacher/{teacherId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Teacher details
+      parameters:
+        - in: path
+          name: teacherId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update teacher
+      parameters:
+        - in: path
+          name: teacherId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeacher"
+      responses:
+        "200": { description: OK }
+    patch:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Toggle teacher activity
+      parameters:
+        - in: path
+          name: teacherId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /admin-access/subject:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List subjects
+      parameters:
+        - in: query
+          name: department
+          schema: { type: string }
+        - in: query
+          name: semester
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create subject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubject"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/subject/{subjectId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Subject details
+      parameters:
+        - in: path
+          name: subjectId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update subject
+      parameters:
+        - in: path
+          name: subjectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubject"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/assignment:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List assignments
+      parameters:
+        - in: query
+          name: batch
+          schema: { type: string }
+        - in: query
+          name: subject
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssignment"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/assignment/{assignmentId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Assignment details
+      parameters:
+        - in: path
+          name: assignmentId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update assignment
+      parameters:
+        - in: path
+          name: assignmentId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssignment"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/assignment/{assignmentId}/submissions:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List submissions for assignment
+      parameters:
+        - in: path
+          name: assignmentId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+
+  /admin-access/assignment/submission/{submissionId}:
+    patch:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Grade/mark submission
+      parameters:
+        - in: path
+          name: submissionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GradeSubmission"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/material:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List materials
+      parameters:
+        - in: query
+          name: batch
+          schema: { type: string }
+        - in: query
+          name: subject
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create material
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMaterial"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/material/{materialId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Material details
+      parameters:
+        - in: path
+          name: materialId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update material
+      parameters:
+        - in: path
+          name: materialId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMaterial"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/routine:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List routines
+      parameters:
+        - in: query
+          name: batch
+          schema: { type: string }
+        - in: query
+          name: subject
+          schema: { type: string }
+        - in: query
+          name: day
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create routine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoutine"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/routine/{routineId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Routine details
+      parameters:
+        - in: path
+          name: routineId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update routine
+      parameters:
+        - in: path
+          name: routineId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoutine"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/result:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List results
+      parameters:
+        - in: query
+          name: subject
+          schema: { type: string }
+        - in: query
+          name: student
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResult"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/result/{resultId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Result details
+      parameters:
+        - in: path
+          name: resultId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update result
+      parameters:
+        - in: path
+          name: resultId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateResult"
+      responses:
+        "200": { description: OK }
+
+  /admin-access/notice:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: List notices
+      parameters:
+        - in: query
+          name: department
+          schema: { type: string }
+        - in: query
+          name: semester
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Create notice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNotice"
+      responses:
+        "201": { description: Created }
+
+  /admin-access/notice/{noticeId}:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Notice details
+      parameters:
+        - in: path
+          name: noticeId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      summary: Update notice
+      parameters:
+        - in: path
+          name: noticeId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNotice"
+      responses:
+        "200": { description: OK }
+
+  /student/academic-details:
+    get:
+      tags: [Student]
+      security: [{ cookieAuth: [] }]
+      summary: Get own academic details
+      responses:
+        "200": { description: OK }
+
+  /student/batch-details:
+    get:
+      tags: [Student]
+      security: [{ cookieAuth: [] }]
+      summary: Get own batch details
+      responses:
+        "200": { description: OK }
+
+  /student/materials:
+    get:
+      tags: [Student]
+      security: [{ cookieAuth: [] }]
+      summary: List materials for batch+subject
+      parameters:
+        - in: query
+          name: batch
+          required: true
+          schema: { type: string }
+        - in: query
+          name: subject
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+
+  /student/submissions:
+    get:
+      tags: [Student]
+      security: [{ cookieAuth: [] }]
+      summary: List my submissions
+      parameters:
+        - in: query
+          name: assignment
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+
+  /student/submit-assignment:
+    post:
+      tags: [Student]
+      security: [{ cookieAuth: [] }]
+      summary: Submit assignment file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                assignment: { type: string }
+                file:
+                  type: string
+                  format: binary
+              required: [assignment, file]
+      responses:
+        "201": { description: Created }
+
+  /others/getstudentscountdata:
+    post:
+      tags: [Others]
+      security: [{ cookieAuth: [] }]
+      summary: Get students count data
+      responses:
+        "200": { description: OK }

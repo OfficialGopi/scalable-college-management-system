@@ -1,3 +1,4 @@
+// Super Admin routes: gated by bearer token middleware for high-privilege ops.
 import { Router } from "express";
 import {
   adminResetPassword,

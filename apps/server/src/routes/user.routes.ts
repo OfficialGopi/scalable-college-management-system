@@ -1,3 +1,4 @@
+// User routes: login/logout, self profile and avatar update.
 import { Router } from "express";
 import {
   getUser,

@@ -23,10 +23,14 @@ import { userRouter } from "./routes/user.routes";
 import { adminRouter } from "./routes/admin.route";
 import { checkRole } from "./middlewares/auth.middleware";
 import { UserRole } from "./types/types";
+import { studentRouter } from "./routes/student.route";
+import { othersRouter } from "./routes/others.route";
 
 app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/admin-access", checkRole(UserRole.ADMIN), adminRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/student", studentRouter);
+app.use("/api/v1/others", othersRouter);
 
 //ERROR MIDDLEWARE
 app.use(errorMiddleware);

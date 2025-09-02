@@ -39,4 +39,9 @@ const profileImageUpload = upload(
   5
 ).single("profileImage");
 
-export { profileImageUpload };
+const assignmentUpload = upload(
+  path.join(__dirname, "../../", "temp", "assignments"),
+  25
+).single("file");
+
+export { profileImageUpload, assignmentUpload };

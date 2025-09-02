@@ -1,3 +1,5 @@
+// Admin controller: handles student, teacher, batch, subject, assignment,
+// material, routine, result and notice management with fine-grained access.
 import { Types } from "mongoose";
 import { hashPassword } from "../helpers/bcrypt.helper";
 import {
@@ -44,9 +46,16 @@ import { MaterialModel } from "../models/material.model";
 import { RoutineModel } from "../models/routine.model";
 import { ResultModel } from "../models/result.model";
 import { NoticeModel } from "../models/notice.model";
+import { SubmissionAssignmentModel } from "../models/submissionAssignment.model";
+import {
+  getSubmissionsQuerySchema,
+  gradeSubmissionAssignmentSchema,
+} from "../schemas/student.schema";
 
-//STUDENT ACCESS
+// STUDENT ACCESS
+// Creates a student user and an associated academic details document
 const createStudent = AsyncHandler(async (req, res) => {
+  // Guard: only admins with STUDENT_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -54,18 +63,18 @@ const createStudent = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Validate body
   const { data, success } = createStudentSchema.safeParse(req.body);
 
   if (!success || !data) {
     throw new ApiError(400, "All Fields Are required");
   }
-
+  // Ensure batch exists
   const batch = await BatchModel.findById(data.batch);
   if (!batch) {
     throw new ApiError(400, "Batch not found");
   }
-
+  // Generate first login password based on DOB
   const hashedPassword = await hashPassword(
     `${
       new Date(data.dateOfBirth).getDate() +
@@ -77,7 +86,7 @@ const createStudent = AsyncHandler(async (req, res) => {
   if (!hashedPassword.success || !hashedPassword.data) {
     throw new ApiError(400, hashedPassword.message);
   }
-
+  // Create user with role STUDENT
   const user = new UserModel({
     name: data.name,
     secretId: data.secretId,
@@ -87,14 +96,15 @@ const createStudent = AsyncHandler(async (req, res) => {
     phoneNumber: data.phoneNumber,
     password: hashedPassword.data,
   });
-
+  // Create academic details referencing the created user and batch
   const student = new AcademicDetailsModel({
     student: user._id,
     batch: batch._id,
     department: data.department,
   });
+  // Link academic details back to user
   user.studentAcademicDetails = student._id as Types.ObjectId;
-
+  // Persist both documents
   await user.save();
   await student.save();
 
@@ -107,7 +117,9 @@ const createStudent = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates student user and/or related academic details
 const updateStudent = AsyncHandler(async (req, res) => {
+  // Guard: only admins with STUDENT_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -115,17 +127,18 @@ const updateStudent = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
+  // Read path param
   const studentId = req.params.studentId;
   if (!studentId) {
     throw new ApiError(400, "Student not found");
   }
-
+  // Validate body
   const { data, success } = updateStudentSchema.safeParse(req.body);
 
   if (!success || !data) {
     throw new ApiError(400, "Atleast one field is required to update");
   }
-
+  // Load user with populated academic details for updates
   const user = (await UserModel.findById(studentId).populate(
     "studentAcademicDetails"
   )) as unknown as IUser & {
@@ -135,7 +148,7 @@ const updateStudent = AsyncHandler(async (req, res) => {
   if (!user || !user.studentAcademicDetails) {
     throw new ApiError(400, "User not found");
   }
-
+  // Apply optional fields conditionally
   if (data.dateOfBirth) {
     user.dateOfBirth = new Date(data.dateOfBirth);
   }
@@ -171,7 +184,7 @@ const updateStudent = AsyncHandler(async (req, res) => {
   if (data.batch) {
     user.studentAcademicDetails.batch = data.batch as unknown as Types.ObjectId;
   }
-
+  // Save and re-fetch latest document
   await user.save();
 
   const updatedUser = await UserModel.findById(studentId).populate(
@@ -187,7 +200,9 @@ const updateStudent = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists students by department and batch with pagination
 const getAllStudents = AsyncHandler(async (req, res) => {
+  // Guard: only admins with STUDENT_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -195,13 +210,13 @@ const getAllStudents = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Validate query
   const { data, success } = getAllStudentsSchema.safeParse(req.query);
 
   if (!success || !data) {
     throw new ApiError(400, "All Fields are required");
   }
-
+  // Aggregate users with academic details matched on dept and batch and apply pagination
   const students = await UserModel.aggregate([
     {
       $match: { role: UserRole.STUDENT }, // only students
@@ -238,7 +253,9 @@ const getAllStudents = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single student's details with academic info
 const getStudentDetails = AsyncHandler(async (req, res) => {
+  // Guard: only admins with STUDENT_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -246,12 +263,12 @@ const getStudentDetails = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Read param
   const studentId = req.params.studentId;
   if (!studentId) {
     throw new ApiError(400, "Student not found");
   }
-
+  // Fetch with population
   const student = await UserModel.findById(studentId).populate(
     "studentAcademicDetails"
   );
@@ -269,7 +286,9 @@ const getStudentDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Toggles isActive flag for a student
 const changeStudentStatus = AsyncHandler(async (req, res) => {
+  // Guard: only admins with STUDENT_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -283,6 +302,7 @@ const changeStudentStatus = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Student not found");
   }
 
+  // Load student excluding sensitive fields
   const student = await UserModel.findById(studentId, {
     password: 0,
     emailVerificationExpiry: 0,
@@ -293,9 +313,13 @@ const changeStudentStatus = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Student not found");
   }
 
+  // Toggle and persist activity flag
   student.isActive = !student.isActive;
 
-  await student.save();
+  await UserModel.updateOne(
+    { _id: studentId },
+    { $set: { isActive: student.isActive } }
+  );
 
   return new ApiResponse(
     200,
@@ -306,45 +330,10 @@ const changeStudentStatus = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-export {
-  createStudent,
-  updateStudent,
-  getAllStudents,
-  getStudentDetails,
-  changeStudentStatus,
-  createTeacher,
-  updateTeacher,
-  getAllTeachers,
-  getTeacherDetails,
-  changeTeacherStatus,
-  createSubject,
-  updateSubject,
-  getAllSubjects,
-  getSubjectDetails,
-  createAssignment,
-  updateAssignment,
-  getAllAssignments,
-  getAssignmentDetails,
-  createMaterial,
-  updateMaterial,
-  getAllMaterials,
-  getMaterialDetails,
-  createRoutine,
-  updateRoutine,
-  getAllRoutines,
-  getRoutineDetails,
-  createResult,
-  updateResult,
-  getAllResults,
-  getResultDetails,
-  createNotice,
-  updateNotice,
-  getAllNotices,
-  getNoticeDetails,
-};
-
-//BATCH ACCESS
+// BATCH ACCESS
+// Creates batches per department for a semester, seeding subjects for that semester
 const createBatch = AsyncHandler(async (req, res) => {
+  // Guard: only admins with BATCH_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -352,13 +341,14 @@ const createBatch = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Validate body
   const { data, success } = createBatchSchema.safeParse(req.body);
 
   if (!success || !data) {
     throw new ApiError(400, "All Fields Are required");
   }
-  let promises = [];
+  // For each department, create a batch seeded with the subjects of the given semester
+  let promises = [] as Promise<any>[];
   for (const department of Object.values(Department)) {
     const subjects = await SubjectModel.find({
       department: department,
@@ -366,7 +356,7 @@ const createBatch = AsyncHandler(async (req, res) => {
     })
       .select("_id")
       .lean();
-
+    // Queue creation for this department
     promises.push(
       BatchModel.create({
         name: data.name,
@@ -378,7 +368,7 @@ const createBatch = AsyncHandler(async (req, res) => {
       })
     );
   }
-
+  // Execute all creations in parallel
   await Promise.all(promises).catch((err) => {
     throw new ApiError(400, "Something went wrong");
   });
@@ -386,7 +376,9 @@ const createBatch = AsyncHandler(async (req, res) => {
   return new ApiResponse(200, {}, "Batch created successfully").send(res);
 });
 
+// Updates a batch's properties
 const updateBatch = AsyncHandler(async (req, res) => {
+  // Guard: only admins with BATCH_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -394,24 +386,24 @@ const updateBatch = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Read param
   const batchId = req.params.batchId;
   if (!batchId) {
     throw new ApiError(400, "Batch not found");
   }
-
+  // Validate body
   const { data, success } = updateBatchSchema.safeParse(req.body);
 
   if (!success || !data) {
     throw new ApiError(400, "Atleast one field is required to update");
   }
-
+  // Ensure batch exists
   const batch = await BatchModel.findById(batchId);
 
   if (!batch) {
     throw new ApiError(400, "Batch not found");
   }
-
+  // Apply changes
   const updatedBatch = await BatchModel.findByIdAndUpdate(
     {
       _id: batchId,
@@ -435,7 +427,9 @@ const updateBatch = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists batches by department; optionally excludes completed ones
 const getAllBatches = AsyncHandler(async (req, res) => {
+  // Guard: only admins with BATCH_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -443,13 +437,13 @@ const getAllBatches = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Validate query
   const { data, success } = getAllBatchesQuerySchema.safeParse(req.query);
 
   if (!success || !data) {
     throw new ApiError(400, "All Fields Are required");
   }
-
+  // Build filter
   const query: {
     department: (typeof Department)[keyof typeof Department];
     isCompleted?: boolean;
@@ -459,7 +453,7 @@ const getAllBatches = AsyncHandler(async (req, res) => {
   if (!data.includeCompletedBatches) {
     query.isCompleted = false;
   }
-
+  // Query and count
   const batches = await BatchModel.find(query);
 
   const totalBatches = await BatchModel.countDocuments();
@@ -474,7 +468,9 @@ const getAllBatches = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single batch with populated subjects
 const getBatchDetails = AsyncHandler(async (req, res) => {
+  // Guard: only admins with BATCH_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -482,12 +478,12 @@ const getBatchDetails = AsyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "You aren't allowed to access this");
   }
-
+  // Read param
   const batchId = req.params.batchId;
   if (!batchId) {
     throw new ApiError(400, "Batch not found");
   }
-
+  // Fetch with relations
   const batch = await BatchModel.findById(batchId).populate("subjects");
 
   if (!batch) {
@@ -503,7 +499,9 @@ const getBatchDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Promotes batch to next semester and appends next semester subjects
 const promoteBatch = AsyncHandler(async (req, res) => {
+  // Guard: only admins with BATCH_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -517,12 +515,14 @@ const promoteBatch = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Batch not found");
   }
 
+  // Ensure batch exists
   const batch = await BatchModel.findById(batchId);
 
   if (!batch) {
     throw new ApiError(400, "Batch not found");
   }
 
+  // Determine next semester value
   let newSemester;
   if (batch.currentSemester === Semester.FIRST) {
     newSemester = Semester.SECOND;
@@ -543,13 +543,14 @@ const promoteBatch = AsyncHandler(async (req, res) => {
   }
   batch.currentSemester = newSemester;
 
+  // Fetch subjects for new semester
   const subjects = await SubjectModel.find({
     department: batch.department,
     semester: newSemester,
   })
     .select("_id")
     .lean();
-
+  // Persist promotion and subject extension
   const promotedBatch = BatchModel.findOneAndUpdate(
     {
       _id: batch._id,
@@ -574,7 +575,9 @@ const promoteBatch = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Marks batch as completed and results as published (only for EIGHTH semester)
 const publishResultAndCompleteBatch = AsyncHandler(async (req, res) => {
+  // Guard: only admins with BATCH_ACCESS can proceed
   if (
     !req.user ||
     req.user.role !== UserRole.ADMIN ||
@@ -588,16 +591,18 @@ const publishResultAndCompleteBatch = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Batch not found");
   }
 
+  // Ensure batch exists
   const batch = await BatchModel.findById(batchId);
 
   if (!batch) {
     throw new ApiError(400, "Batch not found");
   }
 
+  // Only allow completion when batch is in final semester
   if (batch.currentSemester !== Semester.EIGHTH) {
     throw new ApiError(400, "Batch is not completed yet");
   }
-
+  // Set completion and published flags
   const completedBatch = await BatchModel.findOneAndUpdate(
     {
       _id: batch._id,
@@ -619,16 +624,8 @@ const publishResultAndCompleteBatch = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-export {
-  createBatch,
-  updateBatch,
-  getAllBatches,
-  getBatchDetails,
-  promoteBatch,
-  publishResultAndCompleteBatch,
-};
-
-//TEACHER ACCESS
+// TEACHER ACCESS
+// Creates a teacher user with provided details
 const createTeacher = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -644,6 +641,7 @@ const createTeacher = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "All Fields Are required");
   }
 
+  // First login password derived from DOB
   const hashedPassword = await hashPassword(
     `${
       new Date(data.dateOfBirth).getDate() +
@@ -679,6 +677,7 @@ const createTeacher = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates teacher fields; supports optional dateOfBirth coercion
 const updateTeacher = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -727,6 +726,7 @@ const updateTeacher = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists teachers with optional onlyActive filter and pagination
 const getAllTeachers = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -766,6 +766,7 @@ const getAllTeachers = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a teacher's public profile
 const getTeacherDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -797,6 +798,7 @@ const getTeacherDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Toggles isActive flag for teacher
 const changeTeacherStatus = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -829,7 +831,8 @@ const changeTeacherStatus = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-//SUBJECT ACCESS
+// SUBJECT ACCESS
+// Creates a subject and optionally assigns a teacher
 const createSubject = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -866,6 +869,7 @@ const createSubject = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates subject fields; supports reassigning teacher
 const updateSubject = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -914,6 +918,7 @@ const updateSubject = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists subjects filtered by department and optional semester
 const getAllSubjects = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -953,6 +958,7 @@ const getAllSubjects = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns subject details with assigned teacher info
 const getSubjectDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -984,7 +990,8 @@ const getSubjectDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-//ASSIGNMENT ACCESS
+// ASSIGNMENT ACCESS
+// Creates an assignment tied to a batch and subject
 const createAssignment = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1029,6 +1036,7 @@ const createAssignment = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates assignment fields; supports dueDate change and closing
 const updateAssignment = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1075,6 +1083,7 @@ const updateAssignment = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists assignments filtered by batch/subject with pagination
 const getAllAssignments = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1120,6 +1129,7 @@ const getAllAssignments = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single assignment with relations and submissions
 const getAssignmentDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1154,7 +1164,8 @@ const getAssignmentDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-//MATERIAL ACCESS
+// MATERIAL ACCESS
+// Creates a material record targeting a batch and subject
 const createMaterial = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1197,6 +1208,7 @@ const createMaterial = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates material title/description or file reference
 const updateMaterial = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1240,6 +1252,7 @@ const updateMaterial = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists materials filtered by batch/subject with pagination
 const getAllMaterials = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1284,6 +1297,7 @@ const getAllMaterials = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single material with relations
 const getMaterialDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1316,7 +1330,8 @@ const getMaterialDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-//ROUTINE ACCESS
+// ROUTINE ACCESS
+// Creates a routine entry for a batch+subject on a day/shift
 const createRoutine = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1360,6 +1375,7 @@ const createRoutine = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates a routine's subject/day/shift/semester
 const updateRoutine = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1406,6 +1422,7 @@ const updateRoutine = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists routines filtered by batch/subject/day with pagination
 const getAllRoutines = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1455,6 +1472,7 @@ const getAllRoutines = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single routine with relations
 const getRoutineDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1488,7 +1506,8 @@ const getRoutineDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-//RESULT ACCESS
+// RESULT ACCESS
+// Creates a result for a student in a subject
 const createResult = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1530,6 +1549,7 @@ const createResult = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates a result's points
 const updateResult = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1573,6 +1593,7 @@ const updateResult = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists results filtered by subject/student with pagination
 const getAllResults = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1618,6 +1639,7 @@ const getAllResults = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single result with relations
 const getResultDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1651,7 +1673,8 @@ const getResultDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
-//NOTICE ACCESS
+// NOTICE ACCESS
+// Creates a notice optionally filtered to department/semester
 const createNotice = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1686,6 +1709,7 @@ const createNotice = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Updates a notice's title/description/date/filters
 const updateNotice = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1732,6 +1756,7 @@ const updateNotice = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Lists notices filtered by department/semester with pagination
 const getAllNotices = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1775,6 +1800,7 @@ const getAllNotices = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// Returns a single notice with creator info
 const getNoticeDetails = AsyncHandler(async (req, res) => {
   if (
     !req.user ||
@@ -1805,3 +1831,124 @@ const getNoticeDetails = AsyncHandler(async (req, res) => {
     "Notice details fetched successfully"
   ).send(res);
 });
+
+// SUBMISSION ASSIGNMENT MANAGEMENT
+const getAssignmentSubmissions = AsyncHandler(async (req, res) => {
+  if (
+    !req.user ||
+    req.user.role !== UserRole.ADMIN ||
+    !req.user.adminAccess.includes(AdminAccess.ASSIGNMENT_MONITOR_ACCESS)
+  ) {
+    throw new ApiError(400, "You aren't allowed to access this");
+  }
+
+  const { data, success } = getSubmissionsQuerySchema.safeParse(req.query);
+  if (!success || !data) {
+    throw new ApiError(400, "Invalid query parameters");
+  }
+
+  const query: any = {};
+  if (data.assignment) query.assignment = new Types.ObjectId(data.assignment);
+
+  const submissions = await SubmissionAssignmentModel.find(query)
+    .populate("assignment")
+    .populate("student", "name secretId")
+    .skip((data.page - 1) * data.limit)
+    .limit(data.limit)
+    .lean();
+
+  const totalSubmissions =
+    await SubmissionAssignmentModel.countDocuments(query);
+
+  return new ApiResponse(
+    200,
+    { submissions, totalSubmissions },
+    "Submissions fetched successfully"
+  ).send(res);
+});
+
+const gradeAssignmentSubmission = AsyncHandler(async (req, res) => {
+  if (
+    !req.user ||
+    req.user.role !== UserRole.ADMIN ||
+    !req.user.adminAccess.includes(AdminAccess.ASSIGNMENT_MONITOR_ACCESS)
+  ) {
+    throw new ApiError(400, "You aren't allowed to access this");
+  }
+
+  const submissionId = req.params.submissionId;
+  if (!submissionId) {
+    throw new ApiError(400, "Submission not found");
+  }
+
+  const { data, success } = gradeSubmissionAssignmentSchema.safeParse(req.body);
+  if (!success || !data) {
+    throw new ApiError(400, "Invalid request body");
+  }
+
+  const submission = await SubmissionAssignmentModel.findById(submissionId);
+  if (!submission) {
+    throw new ApiError(400, "Submission not found");
+  }
+
+  submission.marksObtained = data.marksObtained;
+  if (typeof data.read === "boolean") submission.read = data.read;
+  await submission.save();
+
+  const updated = await SubmissionAssignmentModel.findById(submissionId)
+    .populate("assignment")
+    .populate("student", "name secretId")
+    .lean();
+
+  return new ApiResponse(
+    200,
+    { submission: updated },
+    "Submission graded"
+  ).send(res);
+});
+
+export {
+  createStudent,
+  updateStudent,
+  getAllStudents,
+  getStudentDetails,
+  changeStudentStatus,
+  createTeacher,
+  updateTeacher,
+  getAllTeachers,
+  getTeacherDetails,
+  changeTeacherStatus,
+  createSubject,
+  updateSubject,
+  getAllSubjects,
+  getSubjectDetails,
+  createAssignment,
+  updateAssignment,
+  createBatch,
+  updateBatch,
+  getAllBatches,
+  getBatchDetails,
+  promoteBatch,
+  publishResultAndCompleteBatch,
+  getAllAssignments,
+  getAssignmentDetails,
+  createMaterial,
+  updateMaterial,
+  getAllMaterials,
+  getMaterialDetails,
+  createRoutine,
+  updateRoutine,
+  getAllRoutines,
+  getRoutineDetails,
+  createResult,
+  updateResult,
+  getAllResults,
+  getResultDetails,
+  createNotice,
+  updateNotice,
+  getAllNotices,
+  getNoticeDetails,
+  // Submission Assignment
+  getAssignmentSubmissions,
+  gradeAssignmentSubmission,
+};

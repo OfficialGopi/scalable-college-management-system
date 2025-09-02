@@ -1,3 +1,4 @@
+// Super Admin controller: privileged operations on admins using bearer token.
 import { env } from "../env";
 import { hashPassword } from "../helpers/bcrypt.helper";
 import { signToken } from "../helpers/jwt.helper";
@@ -12,6 +13,8 @@ import { UserRole } from "../types/types";
 import { AsyncHandler } from "../utils/async-handler.util";
 import { ApiError, ApiResponse } from "../utils/response-formatter.util";
 
+// POST /super-admin/login
+// Verifies static super-admin creds from env and issues a bearer token
 const superAdminLogin = AsyncHandler(async (req, res) => {
   const { data, success } = superAdminLoginSchema.safeParse(req.body);
 
@@ -27,6 +30,7 @@ const superAdminLogin = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Wrong credentials");
   }
 
+  // Generate a signed token using configured secret
   const token = signToken(
     {
       username: env.SUPER_ADMIN_USERNAME,
@@ -45,6 +49,8 @@ const superAdminLogin = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// GET /super-admin/admin
+// Lists admins with pagination and optional active-only filter
 const getAllAdmins = AsyncHandler(async (req, res) => {
   if (!req.superAdmin) {
     throw new ApiError(400, "You are not authorized to access this");
@@ -55,6 +61,7 @@ const getAllAdmins = AsyncHandler(async (req, res) => {
 
   const onlyActive = req.query.onlyActive;
 
+  // Query admins by role + optional active filter, with pagination
   const admins = await UserModel.find(
     {
       role: UserRole.ADMIN,
@@ -62,10 +69,10 @@ const getAllAdmins = AsyncHandler(async (req, res) => {
         onlyActive === "true"
           ? true
           : onlyActive === "false"
-          ? false
-          : {
-              $in: [true, false],
-            },
+            ? false
+            : {
+                $in: [true, false],
+              },
     },
     {
       skip: (Number(page) - 1) * Number(limit),
@@ -81,10 +88,10 @@ const getAllAdmins = AsyncHandler(async (req, res) => {
       onlyActive === "true"
         ? true
         : onlyActive === "false"
-        ? false
-        : {
-            $in: [true, false],
-          },
+          ? false
+          : {
+              $in: [true, false],
+            },
   }).lean();
 
   if (!admins) {
@@ -101,6 +108,8 @@ const getAllAdmins = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// GET /super-admin/admin/:adminId
+// Returns a single admin's public profile by id
 const getAdminDetails = AsyncHandler(async (req, res) => {
   if (!req.superAdmin) {
     throw new ApiError(400, "You are not authorized to access this");
@@ -129,6 +138,8 @@ const getAdminDetails = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// POST /super-admin/admin
+// Creates an admin with default password derived from DOB
 const createAdmin = AsyncHandler(async (req, res) => {
   if (!req.superAdmin) {
     throw new ApiError(400, "You are not authorized to access this");
@@ -140,6 +151,7 @@ const createAdmin = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "All Fields Are required");
   }
 
+  // First login password is a hash of date (ddmmyyyy-like numeric sum)
   const hashedPassword = await hashPassword(
     `${
       new Date(data.dateOfBirth).getDate() +
@@ -174,6 +186,8 @@ const createAdmin = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// PUT /super-admin/admin/:adminId
+// Updates an admin's non-sensitive fields and access list
 const updateAdmin = AsyncHandler(async (req, res) => {
   if (!req.superAdmin) {
     throw new ApiError(400, "You are not authorized to access this");
@@ -199,6 +213,7 @@ const updateAdmin = AsyncHandler(async (req, res) => {
     throw new ApiError(400, "Admin not found");
   }
 
+  // Persist changes via $set to avoid replacing document
   await UserModel.updateOne(
     {
       _id: adminId,
@@ -229,6 +244,8 @@ const updateAdmin = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// PATCH /super-admin/admin/:adminId
+// Toggles admin isActive flag
 const changeAdminActivity = AsyncHandler(async (req, res) => {
   if (!req.superAdmin) {
     throw new ApiError(400, "You are not authorized to access this");
@@ -268,6 +285,8 @@ const changeAdminActivity = AsyncHandler(async (req, res) => {
   ).send(res);
 });
 
+// PATCH /super-admin/admin/:adminId/reset-password
+// Resets password to a hash derived from admin's DOB and marks as first login
 const adminResetPassword = AsyncHandler(async (req, res) => {
   if (!req.superAdmin) {
     throw new ApiError(400, "You are not authorized to access this");

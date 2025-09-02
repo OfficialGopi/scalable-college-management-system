@@ -1,3 +1,4 @@
+// Admin routes: protected by user auth and per-feature AdminAccess guards.
 import { Router } from "express";
 import { checkAdminAccess, checkUser } from "../middlewares/auth.middleware";
 import { AdminAccess } from "../types/types";
@@ -144,6 +145,8 @@ import {
   updateAssignment,
   getAllAssignments,
   getAssignmentDetails,
+  getAssignmentSubmissions,
+  gradeAssignmentSubmission,
 } from "../controllers/admin.controller";
 
 router.get(
@@ -165,6 +168,18 @@ router.put(
   "/assignment/:assignmentId",
   checkAdminAccess(AdminAccess.ASSIGNMENT_MONITOR_ACCESS),
   updateAssignment
+);
+
+router.get(
+  "/assignment/:assignmentId/submissions",
+  checkAdminAccess(AdminAccess.ASSIGNMENT_MONITOR_ACCESS),
+  getAssignmentSubmissions
+);
+
+router.patch(
+  "/assignment/submission/:submissionId",
+  checkAdminAccess(AdminAccess.ASSIGNMENT_MONITOR_ACCESS),
+  gradeAssignmentSubmission
 );
 
 //MATERIAL ACCESS
